@@ -26,7 +26,11 @@ def generate_hash(row):
 def parse_decimal(value):
     if not value:
         return None
-    return float(value.replace(".", "").replace(",", "."))
+
+    value = value.strip()
+    
+    return float(value)
+
 
 
 def process_csv(file_path, cur):
