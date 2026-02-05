@@ -1,11 +1,22 @@
 -- This table is used to store manual expense entries
-CREATE TABLE IF NOT EXISTS dw.fact_expenses (
+CREATE TABLE dw.fact_expenses (
     expense_id SERIAL PRIMARY KEY,
-    expense_date DATE NOT NULL,
+    payment_date DATE NOT NULL,          
+    reference_month DATE NOT NULL,        
     description TEXT,
-    category TEXT,
+    category TEXT,                       
     expense_type TEXT CHECK (expense_type IN ('Fixo', 'Variável')),
+    payment_method TEXT CHECK (payment_method IN ('Dinheiro', 'PIX', 'Crédito', 'Débito')),
+    installments INT DEFAULT NULL,          
+    current_installment INT DEFAULT NULL,
     amount NUMERIC(10,2) NOT NULL
+);
+
+ALTER TABLE dw.fact_expenses 
+ADD CONSTRAINT check_installments 
+CHECK (
+    (payment_method = 'Crédito') OR 
+    (installments IS NULL AND current_installment IS NULL)
 );
 
 -- This view is used to analyze sales data from the staging table
