@@ -3,5 +3,6 @@ gendo_exporter/data/input/
 gendo_exporter/data/output/
 .env
 /data/
+/backups/
 etl_sheets/data/
 etl_sheets/credentials.json

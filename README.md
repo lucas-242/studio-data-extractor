@@ -102,7 +102,34 @@ GENDO_CSV_304_PATH=/data/gendo/report-304
 - The CSV paths should match the volume mount points in `docker-compose.yml`
 - These variables are used by both the ETL scripts and the Docker services
 
-## 9. Initialize Project
+## 9. Backup and Restore
+
+The project includes automated scripts for data backup and restoration located in the `scripts/` directory:
+
+### Backup Script
+```bash
+# Create complete backup (database + volumes)
+./scripts/backup_volumes.sh
+```
+
+**What gets backed up:**
+- PostgreSQL database SQL dump
+- Docker volumes (pgdata, metabase-data)
+- All files saved to `./backups/` with timestamp
+
+### Restore Script
+```bash
+# Restore from backup files
+./scripts/restore_volumes.sh
+```
+
+**Features:**
+- Uses environment variables from `.env` file
+- Creates timestamped backup files
+- Handles both database and volume restoration
+- Error handling and validation
+
+## 10. Initialize Project
 
 Once the project is cloned, docker is running, and the `.env` file is configured, run the following workflow to initialize the project:
 
