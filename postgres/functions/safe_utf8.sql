@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION analytics.safe_utf8(input TEXT)
+CREATE OR REPLACE FUNCTION staging.safe_utf8(input TEXT)
 RETURNS TEXT
 LANGUAGE plpgsql
 AS $$

@@ -1,3 +1,4 @@
+-- Create raw table for Gendo Report 304
 CREATE TABLE IF NOT EXISTS raw.gendo_report_304 (
   id BIGSERIAL PRIMARY KEY,
 

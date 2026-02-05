@@ -1,22 +1,13 @@
 import csv
 import hashlib
 import os
+import sys
 import psycopg2
-from dotenv import load_dotenv
 from datetime import datetime
 from pathlib import Path
 
-load_dotenv()
-
-DB_CONFIG = {
-    "host": os.getenv("POSTGRES_HOST", "postgres"),
-    "dbname": os.getenv("POSTGRES_DB"),
-    "user": os.getenv("POSTGRES_USER"),
-    "password": os.getenv("POSTGRES_PASSWORD"),
-    "port": os.getenv("POSTGRES_PORT", 5432),
-}
-
-CSV_DIR = os.getenv("GENDO_CSV_304_PATH", "/data/gendo")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config import DB_CONFIG, CSV_PATHS, RAW_SCHEMA
 
 def generate_hash(row):
     raw = f"{row['Data']}|{row['Cód. Comanda']}|{row['Serviço']}|{row['Colaborador']}|{row['Cliente']}|{row['Total']}|{row['Forma Pagto']}"
@@ -28,7 +19,6 @@ def parse_decimal(value):
         return None
 
     value = value.strip()
-    
     return float(value)
 
 
@@ -41,8 +31,8 @@ def process_csv(file_path, cur):
             unique_hash = generate_hash(row)
 
             cur.execute(
-                """
-                INSERT INTO raw.gendo_report_304 (
+                f"""
+                INSERT INTO {RAW_SCHEMA}.gendo_report_304 (
                     service_date,
                     order_code,
                     service_name,
@@ -87,18 +77,18 @@ def main():
     conn = psycopg2.connect(**DB_CONFIG)
     cur = conn.cursor()
 
-    csv_files = list(Path(CSV_DIR).rglob("*.csv"))
-    print(f"Arquivos encontrados: {len(csv_files)}")
+    csv_files = list(Path(CSV_PATHS["gendo_304"]).rglob("*.csv"))
+    print(f"Gendo 304 report files found: {len(csv_files)}")
 
     for file_path in csv_files:
-        print(f"Processando {file_path}")
+        print(f"Processing {file_path}")
         process_csv(file_path, cur)
 
     conn.commit()
     cur.close()
     conn.close()
 
-    print("Importação finalizada.")
+    print("Import completed.")
 
 if __name__ == "__main__":
     main()
