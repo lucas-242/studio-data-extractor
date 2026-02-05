@@ -11,6 +11,7 @@ SELECT
     total_amount,
     staging.safe_utf8(professional_name) AS professional_name,
     staging.safe_utf8(client_name) AS client_name,
+    client_phone,
     CASE 
         WHEN payment_method ILIKE 'pix%' THEN 'Pix'
         WHEN payment_method ILIKE '*credito pacote%' THEN 'Crédito Pacote'

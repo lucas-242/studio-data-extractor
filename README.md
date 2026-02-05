@@ -14,6 +14,7 @@ This project automates the extraction, transformation, and loading (ETL) of salo
 * **Staging Layer (`staging`)**: Cleans data types, handles `Latin-1` encoding artifacts, and normalizes categorical values (e.g., unifying payment methods).
 * **Data Warehouse (`dw`)**: A Star Schema design:
 * **Dimensions**: `dim_services` (prices, costs, durations), `dim_professionals` (contract types), and `dim_commission_rules`.
+* **Fact Table**: `fact_expenses` Expenses to manual entries.
 * **Fact View**: `fact_sales` provides a unified view of revenue, commissions, and margins.
 
 

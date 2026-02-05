@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS dw.fact_expenses (
     expense_id SERIAL PRIMARY KEY,
     expense_date DATE NOT NULL,
     description TEXT,
-    category TEXT, -- Ex: Aluguel, Luz, Marketing
+    category TEXT,
     expense_type TEXT CHECK (expense_type IN ('Fixo', 'Variável')),
     amount NUMERIC(10,2) NOT NULL
 );
@@ -42,7 +42,8 @@ SELECT
     )::numeric(10,2) AS contribution_margin,
     
     s.payment_method,
-    s.client_name
+    s.client_name,
+    s.client_phone
 FROM staging.stg_gendo_services s
 LEFT JOIN dw.dim_professionals p ON s.professional_name = p.full_name
 LEFT JOIN dw.dim_services srv ON s.service_name = srv.service_name
