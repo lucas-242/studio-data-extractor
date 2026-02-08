@@ -14,8 +14,9 @@ This project automates the extraction, transformation, and loading (ETL) of salo
 * **Staging Layer (`staging`)**: Cleans data types, handles `Latin-1` encoding artifacts, and normalizes categorical values (e.g., unifying payment methods).
 * **Data Warehouse (`dw`)**: A Star Schema design:
 * **Dimensions**: `dim_services` (prices, costs, durations), `dim_professionals` (contract types), and `dim_commission_rules`.
-* **Fact Table**: `fact_expenses` Expenses to manual entries.
-* **Fact View**: `fact_sales` provides a unified view of revenue, commissions, and margins.
+* **Fact Tables**: 
+  * `fact_expenses`: Manual expense entries
+  * `fact_sales`: Complete sales data with revenue, commissions, and margins
 
 
 
@@ -27,14 +28,14 @@ To handle complex payroll scenarios, the system implements a hierarchical commis
 2. **Level 2 (Default)**: Global service commission defined in `dim_services`.
 3. **Level 3 (Fallback)**: Zero.
 
-This is executed via SQL `COALESCE` within the `fact_sales` view for real-time accuracy.
+This is executed via SQL `COALESCE` within the `load_fact_sales.py` ETL script for accurate data processing.
 
 ## 3. Tech Stack
 
 * **Database**: PostgreSQL 15
 * **Language**: Python 3.9+
 * **Infrastructure**: Docker & Docker Compose
-* **BI Tool**: Metabase
+* **BI Tool**: Metabase (with dedicated database)
 
 ## 4. Infrastructure (Docker)
 
@@ -42,8 +43,8 @@ The project is fully containerized to ensure consistency across development and 
 
 ### Services
 
-* **`studio_postrgres`**: PostgreSQL instance with persistent volume storage.
-* **`studio_metabase`**: Metabase instance to run the BI tool.
+* **`studio_postgres`**: PostgreSQL instance with persistent volume storage.
+* **`studio_metabase`**: Metabase instance with its own dedicated database for BI configurations.
 * **`studio_etl`**: Python environment configured to run ingestion scripts.
 
 ### Deployment Commands
@@ -87,11 +88,19 @@ Before running the project, create a `.env` file in the root directory with the 
 
 ```bash
 # PostgreSQL Database Configuration
-POSTGRES_DB=db_name
-POSTGRES_USER=user_name
-POSTGRES_PASSWORD=your_password_here
+POSTGRES_DB=studio
+POSTGRES_USER=studio_user
+POSTGRES_PASSWORD=password
 POSTGRES_PORT=5432
 POSTGRES_HOST=postgres
+
+# Metabase Database Configuration
+MB_DB_TYPE=postgres
+MB_DB_DBNAME=metabase
+MB_DB_USER=metabase_user
+MB_DB_PASS=metabase_password
+MB_DB_HOST=postgres
+MB_DB_PORT=5432
 
 # CSV Data Paths (optional - defaults shown)
 GENDO_CSV_SERVICES_PATH=/data/gendo/services
@@ -101,6 +110,7 @@ GENDO_CSV_304_PATH=/data/gendo/report-304
 **Important**: 
 - The CSV paths should match the volume mount points in `docker-compose.yml`
 - These variables are used by both the ETL scripts and the Docker services
+- Metabase uses its own database for configuration and dashboard storage
 
 ## 9. Backup and Restore
 
@@ -129,7 +139,21 @@ The project includes automated scripts for data backup and restoration located i
 - Handles both database and volume restoration
 - Error handling and validation
 
-## 10. Initialize Project
+## 10. Custom Insert Scripts
+
+The project supports custom insert scripts in the `postgres/inserts/` directory:
+
+### Default Behavior
+- If no custom scripts are found, the workflow automatically executes `000_insert_dim_professionals_from_raw_gendo.sql`
+- This script inserts all professionals from Gendo command data into the dimension table
+
+### Adding Custom Scripts
+- Place additional SQL scripts in `postgres/inserts/` directory
+- Scripts should follow the naming pattern: `001_insert_*.sql`, `002_insert_*.sql`, etc.
+- All scripts except `000_*` are ignored by Git (see `.gitignore`)
+- The workflow executes scripts in numerical order during initialization
+
+## 11. Initialize Project
 
 Once the project is cloned, docker is running, and the `.env` file is configured, run the following workflow to initialize the project:
 

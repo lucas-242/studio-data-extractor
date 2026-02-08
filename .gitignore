@@ -6,3 +6,7 @@ gendo_exporter/data/output/
 /backups/
 etl_sheets/data/
 etl_sheets/credentials.json
+
+# Ignore all insert files except 000
+postgres/inserts/*
+!postgres/inserts/000_insert_dim_professionals_from_raw_gendo.sql

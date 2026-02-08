@@ -10,7 +10,15 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import DB_CONFIG, CSV_PATHS, RAW_SCHEMA
 
 def generate_hash(row):
-    raw = f"{row['Data']}|{row['Cód. Comanda']}|{row['Serviço']}|{row['Colaborador']}|{row['Cliente']}|{row['Total']}|{row['Forma Pagto']}"
+    raw = (
+        f"{row['Data']}|"
+        f"{row['Cód. Comanda'].strip()}|"
+        f"{row['Serviço'].strip().upper()}|"
+        f"{row['Colaborador'].strip().upper()}|"
+        f"{row['Cliente'].strip().upper()}|"
+        f"{row['Total']}|"
+        f"{row['Forma Pagto'].strip().upper()}"
+    )
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 

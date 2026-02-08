@@ -12,10 +12,13 @@ else
     exit 1
 fi
 
-if [ $# -eq 0 ]; then
+if [ $# -lt 1 ]; then
     echo "❌ Error: Please provide the backup timestamp"
-    echo "📋 Usage: $0 <TIMESTAMP>"
-    echo "📋 Example: $0 20260204_195603"
+    echo "📋 Usage: $0 <TIMESTAMP> [DATABASE]"
+    echo "📋 Examples:"
+    echo "   $0 20260204_195603 studio    # Restore only studio database"
+    echo "   $0 20260204_195603 metabase  # Restore only metabase database"
+    echo "   $0 20260204_195603 all       # Restore both databases and volumes"
     echo ""
     echo "📂 Available backups:"
     ls -1 ./backups/*.tar.gz 2>/dev/null | sed 's/.*_\([0-9]\{8\}_[0-9]\{6\}\)\.tar\.gz/\1/' | sort -u
@@ -23,11 +26,13 @@ if [ $# -eq 0 ]; then
 fi
 
 TIMESTAMP=$1
+DATABASE=${2:-"all"}  # Default to "all" if not specified
 BACKUP_DIR="./backups"
 
 echo "🔄 Starting Docker volumes restore..."
 echo "📁 Backup directory: $BACKUP_DIR"
 echo "⏰ Timestamp: $TIMESTAMP"
+echo "🎯 Target database: $DATABASE"
 echo "================================"
 
 # Stop containers before starting restore
@@ -37,7 +42,6 @@ docker compose stop
 # Project Volume List
 VOLUMES=(
     "studio_script_pgdata"
-    "studio_script_metabase-data"
 )
 
 for volume in "${VOLUMES[@]}"; do
@@ -67,7 +71,7 @@ for volume in "${VOLUMES[@]}"; do
     echo "✅ Restore completed for: $volume"
 done
 
-# Restart containers to apply volume changes
+# Restore SQL Dumps based on DATABASE parameter
 echo "================================"
 echo "🔄 Restarting containers..."
 docker compose up -d
@@ -76,13 +80,30 @@ docker compose up -d
 echo "⏳ Waiting for Database to be ready..."
 sleep 5
 
-# Restore SQL Dump if it exists
-SQL_DUMP="${BACKUP_DIR}/db_dump_${TIMESTAMP}.sql"
-if [ -f "$SQL_DUMP" ]; then
-    echo "🐘 SQL Dump found! Restoring database structure..."
-    cat "$SQL_DUMP" | docker exec -i studio_postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
-    echo "✅ SQL Restore completed!"
+# Restore Studio Database
+if [ "$DATABASE" = "all" ] || [ "$DATABASE" = "studio" ]; then
+    STUDIO_DUMP="${BACKUP_DIR}/studio_dump_${TIMESTAMP}.sql"
+    if [ -f "$STUDIO_DUMP" ]; then
+        echo "🐘 Restoring Studio Database..."
+        cat "$STUDIO_DUMP" | docker exec -i studio_postgres psql -U "$POSTGRES_USER" -d "$STUDIO_DB"
+        echo "✅ Studio Database restore completed!"
+    else
+        echo "⚠️  Studio dump file not found: $STUDIO_DUMP"
+    fi
+fi
+
+# Restore Metabase Database
+if [ "$DATABASE" = "all" ] || [ "$DATABASE" = "metabase" ]; then
+    METABASE_DUMP="${BACKUP_DIR}/metabase_dump_${TIMESTAMP}.sql"
+    if [ -f "$METABASE_DUMP" ]; then
+        echo "🐘 Restoring Metabase Database..."
+        cat "$METABASE_DUMP" | docker exec -i studio_postgres psql -U "$POSTGRES_USER" -d "$METABASE_DB"
+        echo "✅ Metabase Database restore completed!"
+    else
+        echo "⚠️  Metabase dump file not found: $METABASE_DUMP"
+    fi
 fi
 
 echo "================================"
-echo "🎉 Full restore completed successfully!"
+echo "🎉 Restore completed successfully!"
+echo "📊 Database restored: $DATABASE"

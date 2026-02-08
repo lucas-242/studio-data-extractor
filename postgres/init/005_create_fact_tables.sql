@@ -19,45 +19,27 @@ CHECK (
     (installments IS NULL AND current_installment IS NULL)
 );
 
--- This view is used to analyze sales data from the staging table
-CREATE OR REPLACE VIEW dw.fact_sales AS
-SELECT
-    s.source_id,
-    s.service_date,
-    date_trunc('month', s.service_date)::date AS service_month,
-    EXTRACT(DOW FROM s.service_date) AS weekday_number,
-    s.order_code,
-    
-    p.professional_id,
-    s.professional_name,
-    srv.service_id,
-    s.service_name,
-    srv.base_category AS category,
-    
-    s.total_amount AS gross_revenue,
-    
-    -- Commission (Hierarchical: Professional Rule > Service Default > Zero)
-    COALESCE(com.commission_percentage, srv.default_commission_percentage, 0) AS commission_percent,
-    
-    (s.total_amount * (
-        COALESCE(com.commission_percentage, srv.default_commission_percentage, 0) / 100
-    ))::numeric(10,2) AS commission_value,
-    
-    COALESCE(srv.avg_cost, 0) AS service_avg_cost,
-    srv.duration AS service_duration,
-    
-    -- Contribution Margin = Gross Revenue - Commission - Average Cost (What's left after paying for the service and commission)
-    (s.total_amount 
-     - (s.total_amount * (COALESCE(com.commission_percentage, srv.default_commission_percentage, 0) / 100)) 
-     - COALESCE(srv.avg_cost, 0)
-    )::numeric(10,2) AS contribution_margin,
-    
-    s.payment_method,
-    s.client_name,
-    s.client_phone
-FROM staging.stg_gendo_services s
-LEFT JOIN dw.dim_professionals p ON s.professional_name = p.full_name
-LEFT JOIN dw.dim_services srv ON s.service_name = srv.service_name
-LEFT JOIN dw.dim_commission_rules com ON p.professional_id = com.professional_id 
-    AND srv.service_id = com.service_id;
-
+-- This table is used to save the fact sales data
+CREATE TABLE dw.fact_sales (
+    source_id VARCHAR(64),
+    service_date DATE,
+    service_month DATE,
+    weekday_number INTEGER,
+    order_code VARCHAR(50),
+    professional_id INTEGER,
+    professional_name VARCHAR(100),
+    service_id INTEGER,
+    service_name VARCHAR(100),
+    category VARCHAR(50),
+    gross_revenue NUMERIC(10,2),
+    commission_percent NUMERIC(5,2),
+    commission_value NUMERIC(10,2),
+    service_avg_cost NUMERIC(10,2),
+    service_duration INTERVAL,
+    contribution_margin NUMERIC(10,2),
+    payment_method VARCHAR(50),
+    client_name VARCHAR(100),
+    client_phone VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    unique_hash VARCHAR(64) UNIQUE
+);

@@ -20,7 +20,7 @@ def parse_duration(value):
     res = value.lower().replace('h', ' hours ').replace('min', ' minutes ')
     return res.strip()
 
-def import_services_and_commissions(file_path, cur):
+def import_services(file_path, cur):
     with open(file_path, mode='r', encoding='latin-1') as csvFile:
         reader = csv.DictReader(csvFile, delimiter=';')
         
@@ -34,7 +34,7 @@ def import_services_and_commissions(file_path, cur):
             category = row['Categoria'].strip().upper()
             commission_pct = parse_decimal(row['Comissão'])
 
-            # 1. Upsert services
+            # Upsert services
             cur.execute(f"""
                 INSERT INTO {DW_SCHEMA}.dim_services (
                     service_name, base_category, base_price, avg_cost, duration, 
@@ -58,16 +58,6 @@ def import_services_and_commissions(file_path, cur):
                 print(f"⚠️ Warning: It was not possible to get ID for service {service_name}")
                 continue
 
-            # 2. if comission is greater than 0, apply to all professionals
-            if commission_pct > 0:
-                cur.execute(f"""
-                    INSERT INTO {DW_SCHEMA}.dim_commission_rules (professional_id, service_id, commission_percentage)
-                    SELECT professional_id, %s, %s
-                    FROM {DW_SCHEMA}.dim_professionals
-                    ON CONFLICT (professional_id, service_id) 
-                    DO UPDATE SET commission_percentage = EXCLUDED.commission_percentage;
-                """, (service_id, commission_pct))
-
 def main():
     conn = psycopg2.connect(**DB_CONFIG)
     cur = conn.cursor()
@@ -78,7 +68,7 @@ def main():
 
         for file_path in csv_files:
             print(f"Processing {file_path}")
-            import_services_and_commissions(file_path, cur)
+            import_services(file_path, cur)
 
     except Exception as e:
         conn.rollback()
@@ -87,7 +77,6 @@ def main():
         conn.commit()
         cur.close()
         conn.close()
-        print("Services import completed.")
 
 if __name__ == "__main__":
     main()

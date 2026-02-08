@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
 
 from import_gendo_services import main as import_gendo_services_and_commissions
 from import_gendo_304 import main as import_gendo_304
+from load_fact_sales import main as refresh_fact_sales
 from config import CSV_PATHS
 
 
@@ -32,9 +33,13 @@ def main():
         print()
         
         print("📊 #2: Importing Gendo 304 data...")
-        print(f"📁 Diretório dos CSVs: {CSV_PATHS['gendo_304']}")
         import_gendo_304()
         print("✅ #2 completed!")
+        print()
+
+        print("📊 #3: Refreshing fact sales...")
+        refresh_fact_sales()
+        print("✅ #3 completed!")
         print()
         
         print("🎉 ETL processing completed!")

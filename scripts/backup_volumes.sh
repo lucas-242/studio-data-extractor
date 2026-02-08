@@ -20,15 +20,18 @@ mkdir -p "$BACKUP_DIR"
 echo "🔄 Starting backup process..."
 echo "================================"
 
-# Database SQL Dump (Using variables from .env)
-echo "🐘 Creating Database SQL Dump..."
-docker exec studio_postgres pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" > "$BACKUP_DIR/db_dump_${TIMESTAMP}.sql"
-echo "✅ SQL Dump completed!"
+# Database SQL Dumps (Separate backups for each database)
+echo "🐘 Creating Studio Database SQL Dump..."
+docker exec studio_postgres pg_dump -U "$POSTGRES_USER" "$STUDIO_DB" > "$BACKUP_DIR/studio_dump_${TIMESTAMP}.sql"
+echo "✅ Studio SQL Dump completed!"
+
+echo "🐘 Creating Metabase Database SQL Dump..."
+docker exec studio_postgres pg_dump -U "$POSTGRES_USER" "$METABASE_DB" > "$BACKUP_DIR/metabase_dump_${TIMESTAMP}.sql"
+echo "✅ Metabase SQL Dump completed!"
 
 # Docker Volumes Backup (Physical files)
 VOLUMES=(
     "studio_script_pgdata"
-    "studio_script_metabase-data"
 )
 
 for volume in "${VOLUMES[@]}"; do
